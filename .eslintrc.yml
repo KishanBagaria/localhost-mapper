@@ -1,0 +1,16 @@
+env:
+  browser: true
+parser: babel-eslint
+extends: 'airbnb-base'
+rules:
+  semi: [error, never]
+  comma-dangle: [error, never]
+
+  object-curly-newline: off
+  no-await-in-loop: off
+  no-underscore-dangle: off
+  no-restricted-syntax:
+    - error
+    - ForInStatement
+    - LabeledStatement
+    - WithStatement
