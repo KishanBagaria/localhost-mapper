@@ -39,7 +39,7 @@ lhMapper.map(`http://localhost:${PORT}`, 'http://awesome-site')
 
 or type in the following in a terminal:
 ```sh
-$ localhost-mapper http://localhost:31415 http://awesome-site
+$ lh-map http://localhost:31415 http://awesome-site
 ```
 
 ## How It Works
