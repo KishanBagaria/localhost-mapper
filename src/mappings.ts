@@ -2,6 +2,7 @@ import createProxy from './proxy-server.js'
 import changeNetworkConfig from './network-config.js'
 import pacManager from './pac-manager.js'
 import normalizeAddress from './util/normalize-address.js'
+import createPACRule from './util/create-pac-rule.js'
 import registerExitHandler from './exit-handler.js'
 import LocalhostMapperError from './errors.js'
 import { LOOPBACK_HOST } from './constants.js'
@@ -119,9 +120,7 @@ export async function add({
       ? await createProxy(original.href, { ssl: ssl || isHTTPS, ...proxyConfig })
       : undefined
     const newHost = proxyHandle ? `${LOOPBACK_HOST}:${proxyHandle.port}` : original.host
-    const line = isRegex
-      ? `if (${key}.test(url)) return 'PROXY ${newHost}'`
-      : `if (url.indexOf('${key}') === 0) return 'PROXY ${newHost}'`
+    const line = createPACRule(isRegex ? target : key, newHost)
 
     try {
       update = await pacManager.add({ pid: process.pid, line, to: key, from: original.href })
