@@ -39,7 +39,7 @@ async function pushToServer(port: number, pac: string): Promise<void> {
 }
 
 /** Writes the new state to disk, pushes the PAC file to the server, and returns its URL. */
-async function onUpdate(pacState: PACState): Promise<{ url: string }> {
+async function onUpdate(pacState: PACState): Promise<{ url: string | null }> {
   // Only worth reading the previous PAC if we're actually going to serve rules.
   const upstream = pacState.ifs.length ? await getUpstreamPAC() : null
   const pac = buildPACFile(
@@ -61,6 +61,10 @@ async function onUpdate(pacState: PACState): Promise<{ url: string }> {
     await pushToServer(serverState.port, pac)
   }
 
+  // An empty update tells the server to shut down, so there is no live URL for
+  // the OS to use. Preserve the update as a distinct result from "no change".
+  if (pacState.ifs.length === 0) return { url: null }
+
   // The content hash makes the URL change whenever the PAC file does, so the
   // OS and browsers can't serve a stale cached copy.
   return { url: `http://${LOOPBACK_HOST}:${serverState.port}/${rev(pac)}.pac` }
@@ -75,7 +79,7 @@ const pacManager = {
     return pruneDead(pacState.ifs).length === 0
   },
 
-  async add({ pid, line, from, to }: PACEntry & { from: string }): Promise<{ url: string }> {
+  async add({ pid, line, from, to }: PACEntry & { from: string }): Promise<{ url: string | null }> {
     const pacState = await getPACState()
     const matches = (entry: PACEntry) => entry.line.split('return')[0] === line.split('return')[0]
 
@@ -91,14 +95,14 @@ const pacManager = {
     return onUpdate(pacState)
   },
 
-  async removeByLine(line: string): Promise<{ url: string }> {
+  async removeByLine(line: string): Promise<{ url: string | null }> {
     const pacState = await getPACState()
     pacState.ifs = pruneDead(pacState.ifs).filter(entry => entry.line !== line)
     return onUpdate(pacState)
   },
 
   /** Returns `null` when this process owned no mappings, so nothing changed. */
-  async removeByPID(pid: number): Promise<{ url: string } | null> {
+  async removeByPID(pid: number): Promise<{ url: string | null } | null> {
     const pacState = await getPACState()
     const oldLength = pacState.ifs.length
     pacState.ifs = pruneDead(pacState.ifs).filter(entry => entry.pid !== pid)

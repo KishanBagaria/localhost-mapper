@@ -1,5 +1,5 @@
 import createProxy from './proxy-server.js'
-import changeNetworkConfig from './network-config.js'
+import changeNetworkConfig, { restoreBackup } from './network-config.js'
 import pacManager from './pac-manager.js'
 import normalizeAddress from './util/normalize-address.js'
 import createPACRule from './util/create-pac-rule.js'
@@ -17,10 +17,14 @@ interface CurrentMapping {
 /** Mappings owned by this process, keyed by target href (or regex source). */
 export const currentMappings = new Map<string, CurrentMapping>()
 
-type PACUpdate = { url: string } | null
+type PACUpdate = { url: string | null } | null
 
 export async function onUpdate(update: PACUpdate): Promise<void> {
   if (!update) return
+  if (update.url === null) {
+    await restoreBackup()
+    return
+  }
   registerExitHandler()
   await changeNetworkConfig(update.url)
 }
