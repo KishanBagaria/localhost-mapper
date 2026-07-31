@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
+# Resets everything localhost-mapper touches, for when an interrupted run
+# leaves state behind. macOS only.
 
-set -ux
+set -u
 
-rm ~/.lhmapper*
-pkill -f pac-server
+rm -f ~/.lhmapper*
+pkill -f pac-server || true
 
-IFS=$'\n'
-for nic in $(/usr/sbin/networksetup -listallnetworkservices | tail +2)
-do
+while IFS= read -r nic; do
   /usr/sbin/networksetup -setautoproxyurl "$nic" " "
   /usr/sbin/networksetup -setautoproxystate "$nic" off
-done
+done < <(/usr/sbin/networksetup -listallnetworkservices | tail -n +2)
